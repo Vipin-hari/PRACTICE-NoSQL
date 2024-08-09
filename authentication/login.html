@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: rgb(69, 67, 70);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        .con {
+            background-color: rgb(176, 126, 223);
+            color: #333333;
+            padding: 20px;
+            border-radius: 10px;
+            width: 30%;
+            box-shadow: 0 0 10px rgba(214, 10, 10, 0.774);
+        }
+
+        .con b {
+            display: block;
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 1.2em;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #8054ff;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="con">
+        <form id="form">
+        <b>Login</b><br>
+        <label for="email">Email</label><br>
+        <input type="email" id="email" placeholder="Enter your Email-id"><br>
+        <label for="password">Password</label><br>
+        <input type="password" id="password" placeholder="Enter your Password"><br>
+        <input type="submit" name="" id="submit">
+
+        </form>
+    </div>
+        <script type="module">
+            
+            import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+            import { getAuth, signInWithEmailAndPassword} from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+            import { getDatabase, get, ref, child } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+            const firebaseConfig = {
+              apiKey: "AIzaSyB1sAfHF3nQz7aeenuFkU-IWt2PX87xP8Y",
+              authDomain: "practice-5d907.firebaseapp.com",
+              projectId: "practice-5d907",
+              storageBucket: "practice-5d907.appspot.com",
+              messagingSenderId: "987464234623",
+              appId: "1:987464234623:web:033b2dea59373beadcb14a",
+              measurementId: "G-W1XW9P0JEX"
+            };
+          
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getDatabase();
+            const dbref = ref(db);
+
+            let email = document.getElementById("email");
+            let passwordc = document.getElementById("password");
+            let form = document.getElementById("form");
+
+            let Loginuser = e =>{
+                e.preventDefault();
+
+
+// REVISE FROM HERE
+
+                signInWithEmailAndPassword(auth, email.value, password.value)
+                .then((cred)=>{
+                    console.log("logged in");
+                    get(child(dbref,'userlist/' + cred.user.uid)).then((snapshot)=>{
+                        if(snapshot.exists){
+                            sessionStorage.setItem("userlist",JSON.stringify({
+                                firstname: snapshot.val().firstname,
+                                lastname: snapshot.val().lastname
+                            }
+                          
+                            ))
+                        }
+                        sessionStorage.setItem("usercred",JSON.stringify(cred.user))
+                            window.location.href="home.html";
+                    })
+                })
+            }
+            form.addEventListener('submit',Loginuser);
+          </script>
+    
+</body>
+</html>

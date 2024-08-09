@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload and Display</title>
+    <style>
+        .img-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .img-container img {
+            max-width: 100%;
+            max-height: 100%;
+            border: 1px solid #ddd;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <form id="form">
+        <b>Register</b><br>
+        <label for="fname">First name</label><br>
+        <input type="text" name="" id="fname" placeholder="Enter your Firstname"><br>
+        <label for="lname">Last name</label>
+        <input type="text" name="" id="lname" placeholder="Enter your Lastname"><br>
+        <label for="email">Email</label><br>
+        <input type="email" id="email" placeholder="Enter your Email-id"><br>
+        <label for="password">Password</label><br>
+        <input type="password" id="password" placeholder="Create your Password"><br>
+        <!-- Input for image upload -->
+        <label for="fileInput">Profile Picture</label><br>
+        <input type="file" id="fileInput" accept="image/*"><br>
+        <input type="submit" name="" id="submit">
+    </form>
+
+    <div class="img-container" id="imageContainer"></div>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
+        import { getStorage, ref as r, uploadBytes, listAll, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-storage.js";
+        import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+        import { getDatabase, set, ref as rd } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js";
+
+        const firebaseConfig = {
+    apiKey: "AIzaSyB1sAfHF3nQz7aeenuFkU-IWt2PX87xP8Y",
+    authDomain: "practice-5d907.firebaseapp.com",
+    databaseURL: "https://practice-5d907-default-rtdb.firebaseio.com",
+    projectId: "practice-5d907",
+    storageBucket: "practice-5d907.appspot.com",
+    messagingSenderId: "987464234623",
+    appId: "1:987464234623:web:033b2dea59373beadcb14a",
+    measurementId: "G-W1XW9P0JEX"
+  };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const storage = getStorage(app);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let email = document.getElementById("email");
+        let password = document.getElementById("password");
+        let form = document.getElementById("form");
+        let fname = document.getElementById("fname");
+        let lname = document.getElementById("lname");
+        let fileInput = document.getElementById("fileInput");
+
+        let Registeruser = (e) => {
+            e.preventDefault();
+
+            createUserWithEmailAndPassword(auth, email.value, password.value)
+                .then((cred) => {
+                    console.log(cred);
+                    set(rd(db, 'userlist/' + cred.user.uid), {
+                        firstname: fname.value,
+                        lastname: lname.value
+                    });
+
+                    // After registering and storing user details, upload image with user UID
+                    uploadImageWithUID(cred.user.uid);
+                })
+                .catch((error) => {
+                    console.error("Error registering user:", error);
+                });
+        };
+
+        form.addEventListener("submit", Registeruser);
+
+        // Function to handle image upload with user UID
+        function uploadImageWithUID(userUID) {
+            const selectedFile = fileInput.files[0];
+
+            if (selectedFile) {
+                // Specify the folder path with the user UID in Firebase Storage
+                const folderPath = `most-sold/${userUID}`;
+                const fileName = selectedFile.name;
+                const storageRef = r(storage, `${folderPath}/${fileName}`);
+
+                // Upload the file to Firebase Storage
+                uploadBytes(storageRef, selectedFile)
+                    .then((snapshot) => {
+                        console.log("File uploaded successfully!");
+                        // After uploading, refresh the displayed images
+                        retrieveAndDisplayImages();
+                    })
+                    .catch((error) => {
+                        console.error("Error uploading file:", error);
+                    });
+            } else {
+                console.error("No file selected.");
+            }
+        }
+
+        // Function to retrieve and display images
+        function retrieveAndDisplayImages() {
+            const folderRef = r(storage, "most-sold");
+            const imgContainer = document.getElementById("imageContainer");
+
+            // Clear the image container before displaying new images
+            imgContainer.innerHTML = "";
+
+            // Get a list of all items in the folder
+            listAll(folderRef)
+                .then((result) => {
+                    // Loop through each item in the folder
+                    result.items.forEach((itemRef) => {
+                        // Get the download URL for each item
+                        getDownloadURL(itemRef)
+                            .then((url) => {
+                                // Display the image in the HTML
+                                imgContainer.innerHTML += `<img src="${url}" alt="Product Image">`;
+                            })
+                            .catch((error) => {
+                                // Handle errors for individual items
+                                console.error(error);
+                            });
+                    });
+                })
+                .catch((error) => {
+                    // Handle errors for the entire folder
+                    console.error(error);
+                });
+        }
+
+        // Initial retrieval and display of images
+        retrieveAndDisplayImages();
+    </script>
+</body>
+</html>
